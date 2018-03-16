@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Modelluhr</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      width: 100%;
+      height: 100%;
+    }
+    label {
+      width: 150px;
+      display: inline-block;
+      height: 40px;
+    }
+    canvas {
+      display: block;
+    }
+    input {
+      width: 50px;
+    }
+  </style>
+</head>
+  <body>
+    <div id="setup">
+      <h1>Modelluhr</h1>
+      <form>
+        <div>
+          <label>Startzeit:</label>
+          <input id="hour" name="hour" type="number" value="10" min="0" max="23">
+          <input id="min" name="min" type="number" value="0" min="0" max="59">
+          <input id="sec" name="sec" type="number" value="0" min="0" max="59">
+        </div>
+        <div>
+          <label>Geschwindigkeit:</label>
+          <input id="factor" name="factor" type="number" value="3" min="1" max="20">-fach
+        </div>
+        <button id="start">Starten</button>
+      </form>
+    </div>
+    <canvas id="clock"></canvas>
+    <script>
+      var canvas
+      var setup
+      var ctx
+      var logo = new Path2D('m 17,204.5 0,-81.5 23,0 23,0 0,81.5 0,81.5 -23,0 -23,0 0,-81.5 z m 102,0 0,-81.5 23,0 23,0 0,81.5 0,81.5 -23,0 -23,0 0,-81.5 z m 102,0 0,-81.5 23,0 23,0 0,81.5 0,81.5 -23,0 -23,0 0,-81.5 z M 17,69.804239 17,46.3945 79.251377,31.307136 141.50275,16.219773 204.25138,31.298035 267,46.376296 l 0,23.418841 0,23.418841 -1.25,-0.471262 C 265.0625,92.483522 236.82225,85.628588 202.99389,77.509529 L 141.48778,62.747605 80.493889,77.507725 C 46.94725,85.625791 18.9375,92.480725 18.25,92.740911 L 17,93.213978 17,69.804239 z')
+      var now = new Date()
+      var tickDelay = 20
+      var tickMillis
+
+      var skin = {
+        outerBorder: { lineWidth: 0.02, startAt: 0, radius: 0.97, color: 'gray', alpha: 1 },
+        smallIndicator: { lineWidth: 0.02, startAt: 0.86, endAt: 0.93, color: 'black', alpha: 1 },
+        largeIndicator: { lineWidth: 0.06, startAt: 0.70, endAt: 0.93, color: 'black', alpha: 1 },
+        hourHand: { lineWidth: 0.08, startAt: -0.15, endAt: 0.60, color: 'black', alpha: 1 },
+        minuteHand: { lineWidth: 0.07, startAt: -0.15, endAt: 0.88, color: 'black', alpha: 1 },
+        secondHand: { lineWidth: 0.02, startAt: -0.20, endAt: 0.59, color: 'red', alpha: 1 },
+        secondDecoration: { lineWidth: 0.02, startAt: 0.59, radius: 0.1, fillColor: 'red', color: 'red', alpha: 1 }
+      }
+
+      function onResize () {
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+        renderTime()
+      }
+
+      function onLoad () {
+        canvas = document.getElementById('clock')
+        setup = document.getElementById('setup')
+        document.getElementById('start').addEventListener('click', startClock, false)
+        canvas.addEventListener('click', stopClock, false)
+        canvas.style.display = 'none'
+        setInterval(tick, tickDelay)
+      }
+
+      function showFullscreen (el) {
+        var doc = document
+        el = el || doc.documentElement
+
+        var requestFullScreen = el.requestFullscreen || el.mozRequestFullScreen || el.webkitRequestFullScreen || el.msRequestFullscreen
+        var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen
+
+        if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+          requestFullScreen.call(el)
+        }
+      }
+
+      function drawCircle (angle, r, skin) {
+        if (skin == null) { return }
+        ctx.save()
+        ctx.translate(canvas.width / 2, canvas.height / 2)
+        ctx.rotate(Math.PI * (angle / 30 - 0.5))
+        ctx.lineWidth = r * skin.lineWidth
+        ctx.beginPath()
+        ctx.fillStyle = skin.fillColor
+        ctx.strokeStyle = skin.color
+        ctx.arc(r * skin.startAt, 0, r * skin.radius, 0, 2 * Math.PI, false)
+        if (skin.fillColor) {
+          ctx.fill()
+        } else {
+          ctx.stroke()
+        }
+
+        ctx.restore()
+    	}
+
+      function drawLogo () {
+        ctx.save()
+        ctx.fillStyle = 'gray'
+        ctx.translate(canvas.width / 2 - 45, canvas.height * 0.67)
+        ctx.scale(0.3, 0.3)
+        ctx.fill(logo)
+        ctx.restore()
+      }
+
+      function drawLine (angle, r, skin) {
+        if (skin == null) { return }
+        ctx.save()
+        ctx.translate(canvas.width / 2, canvas.height / 2)
+        ctx.rotate(Math.PI * (angle / 30 - 0.5))
+        ctx.globalAlpha = skin.alpha
+        ctx.strokeStyle = skin.color
+        ctx.lineWidth = r * skin.lineWidth
+        ctx.beginPath()
+        ctx.moveTo(r * skin.startAt, 0)
+        ctx.lineTo(r * skin.endAt, 0)
+        ctx.stroke()
+        ctx.restore()
+      }
+
+      function renderTime () {
+        ctx = canvas.getContext('2d')
+        ctx.beginPath()
+        ctx.rect(0 , 0, canvas.width, canvas.height)
+        ctx.fillStyle = 'white'
+        ctx.fill()
+        var cx = canvas.width / 2
+        var cy = canvas.height / 2
+        var r = Math.min(canvas.width, canvas.height) / 2
+        drawCircle(cx, cy, r, skin.outerBorder)
+        for (var i = 0; i < 60; ++i) {
+          if (i % 5 === 0) {
+            drawLine(i, r, skin.largeIndicator)
+          } else {
+            drawLine(i, r, skin.smallIndicator)
+          }
+        }
+
+        var hour = now.getHours()
+        var min = now.getMinutes()
+        var sec = now.getSeconds()
+        var msec = now.getMilliseconds()
+        drawLogo()
+        drawCircle(0, r , skin.outerBorder)
+        drawLine((hour % 12) * 5 + min / 12.0, r, skin.hourHand)
+        drawLine(min, r, skin.minuteHand)
+        var secPos = 0
+        if (sec < 59) {
+          secPos = 60/59 * (sec + msec / 1000.0)
+        }
+
+        drawLine(secPos, r, skin.secondHand)
+        drawCircle(secPos, r, skin.secondDecoration)
+      }
+
+      function tick () {
+        if (canvas.style.display === 'block') {
+          now = new Date(now.valueOf() + tickMillis)
+          renderTime()
+        }
+      }
+
+      function startClock (event) {
+        event.preventDefault()
+        showFullscreen(clock)
+        now = new Date()
+        now.setHours(document.getElementById('hour').value)
+        now.setMinutes(document.getElementById('min').value)
+        now.setSeconds(document.getElementById('sec').value)
+        tickMillis = tickDelay * document.getElementById('factor').value
+        console.log(now)
+        setup.style.display = 'none'
+        canvas.style.display = 'block'
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+
+        renderTime()
+      }
+
+      function stopClock () {
+        canvas.style.display = 'none'
+        setup.style.display = 'block'
+      }
+
+      window.addEventListener('resize', onResize, false)
+      window.addEventListener('load', onLoad, false)
+    </script>
+  </body>
+</html>
