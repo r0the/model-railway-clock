@@ -41,13 +41,13 @@
     </div>
     <canvas id="clock"></canvas>
     <script>
-      var canvas
-      var setup
-      var ctx
-      var logo = new Path2D('m 17,204.5 0,-81.5 23,0 23,0 0,81.5 0,81.5 -23,0 -23,0 0,-81.5 z m 102,0 0,-81.5 23,0 23,0 0,81.5 0,81.5 -23,0 -23,0 0,-81.5 z m 102,0 0,-81.5 23,0 23,0 0,81.5 0,81.5 -23,0 -23,0 0,-81.5 z M 17,69.804239 17,46.3945 79.251377,31.307136 141.50275,16.219773 204.25138,31.298035 267,46.376296 l 0,23.418841 0,23.418841 -1.25,-0.471262 C 265.0625,92.483522 236.82225,85.628588 202.99389,77.509529 L 141.48778,62.747605 80.493889,77.507725 C 46.94725,85.625791 18.9375,92.480725 18.25,92.740911 L 17,93.213978 17,69.804239 z')
-      var now = new Date()
-      var tickDelay = 20
-      var tickMillis
+      var canvas;
+      var setup;
+      var ctx;
+      var logo = new window.Path2D('m 17,204.5 0,-81.5 23,0 23,0 0,81.5 0,81.5 -23,0 -23,0 0,-81.5 z m 102,0 0,-81.5 23,0 23,0 0,81.5 0,81.5 -23,0 -23,0 0,-81.5 z m 102,0 0,-81.5 23,0 23,0 0,81.5 0,81.5 -23,0 -23,0 0,-81.5 z M 17,69.804239 17,46.3945 79.251377,31.307136 141.50275,16.219773 204.25138,31.298035 267,46.376296 l 0,23.418841 0,23.418841 -1.25,-0.471262 C 265.0625,92.483522 236.82225,85.628588 202.99389,77.509529 L 141.48778,62.747605 80.493889,77.507725 C 46.94725,85.625791 18.9375,92.480725 18.25,92.740911 L 17,93.213978 17,69.804239 z');
+      var now = new Date();
+      var tickDelay = 20;
+      var tickMillis;
 
       var skin = {
         outerBorder: { lineWidth: 0.02, startAt: 0, radius: 0.97, color: 'gray', alpha: 1 },
@@ -57,7 +57,7 @@
         minuteHand: { lineWidth: 0.07, startAt: -0.15, endAt: 0.88, color: 'black', alpha: 1 },
         secondHand: { lineWidth: 0.02, startAt: -0.20, endAt: 0.59, color: 'red', alpha: 1 },
         secondDecoration: { lineWidth: 0.02, startAt: 0.59, radius: 0.1, fillColor: 'red', color: 'red', alpha: 1 }
-      }
+      };
 
       function onResize () {
         canvas.width = window.innerWidth;
@@ -77,10 +77,7 @@
       function showFullscreen (el) {
         var doc = document;
         el = el || doc.documentElement;
-
         var requestFullScreen = el.requestFullscreen || el.mozRequestFullScreen || el.webkitRequestFullScreen || el.msRequestFullscreen;
-        var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
-
         if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
           requestFullScreen.call(el);
         }
@@ -103,7 +100,7 @@
         }
 
         ctx.restore();
-    	}
+      }
 
       function drawLogo () {
         ctx.save();
@@ -132,7 +129,7 @@
       function renderTime () {
         ctx = canvas.getContext('2d');
         ctx.beginPath();
-        ctx.rect(0 , 0, canvas.width, canvas.height);
+        ctx.rect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = 'white';
         ctx.fill();
         var cx = canvas.width / 2;
@@ -152,12 +149,12 @@
         var sec = now.getSeconds();
         var msec = now.getMilliseconds();
         drawLogo();
-        drawCircle(0, r , skin.outerBorder);
+        drawCircle(0, r, skin.outerBorder);
         drawLine((hour % 12) * 5 + min / 12.0, r, skin.hourHand);
         drawLine(min, r, skin.minuteHand);
         var secPos = 0;
         if (sec < 59) {
-          secPos = 60/59 * (sec + msec / 1000.0);
+          secPos = 60 / 59 * (sec + msec / 1000.0);
         }
 
         drawLine(secPos, r, skin.secondHand);
@@ -173,12 +170,13 @@
 
       function startClock (event) {
         event.preventDefault();
-        showFullscreen(clock);
+        showFullscreen();
         now = new Date();
         now.setHours(document.getElementById('hour').value);
         now.setMinutes(document.getElementById('min').value);
         now.setSeconds(document.getElementById('sec').value);
         tickMillis = tickDelay * document.getElementById('factor').value;
+        console.log(tickMillis);
         console.log(now);
         setup.style.display = 'none';
         canvas.style.display = 'block';
